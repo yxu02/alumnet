@@ -1,0 +1,19 @@
+--
+-- For more information on config.lua see the Project Configuration Guide at:
+-- https://docs.coronalabs.com/guide/basics/configSettings
+--
+
+application =
+{
+	launchPad = false,  -- disabling corona analytics
+	content = {
+		width = 360, height = 640, -- these 2 values are ignored when using adaptive mode. But just leaving them here to know the layout original size from Sketch
+		scale = "adaptive",
+		fps = 60,
+        imageSuffix = {
+		    ["@2x"] = 1.5,
+            ["@3x"] = 2.5,
+		}
+
+	},
+}

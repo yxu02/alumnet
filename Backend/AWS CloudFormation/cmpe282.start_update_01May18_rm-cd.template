@@ -1,0 +1,313 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+
+  "Description": "###############",
+
+  "Parameters": {
+    "InstanceTypeParameter": {
+      "Description": "EC2 instance type",
+      "Type": "String",
+      "Default": "t2.micro",
+      "AllowedValues": [ "t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+      "ConstraintDescription": "must be a valid EC2 instance type."
+    },
+
+    "ImageIdParameter": {
+      "Description": "AMI id for the EC2 instance",
+      "Type": "AWS::EC2::Image::Id",
+      "Default": "ami-d874e0a0"
+    },
+
+    "KeyNameParameter": {
+      "Description": "Key pair name for the EC2 instance",
+      "Type": "AWS::EC2::KeyPair::KeyName",
+      "Default": "##########"
+    },
+    
+    "DBName": {
+      "Default": "##########",
+      "Description" : "Database for developing CMPE282 term project",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+    },
+    
+    "DBUser": {
+      "NoEcho": "true",
+      "Description" : "The database admin account username",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "16",
+      "AllowedPattern" : "[a-zA-Z][a-zA-Z0-9]*",
+      "ConstraintDescription" : "must begin with a letter and contain only alphanumeric characters."
+    },
+    
+    "DBPassword": {
+      "NoEcho": "true",
+      "Description" : "The database admin account password",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "41",
+      "AllowedPattern" : "[a-zA-Z0-9]+",
+      "ConstraintDescription" : "must contain only alphanumeric characters."
+    },
+
+    "DBAllocatedStorage": {
+      "Default": "5",
+      "Description" : "The size of the database (Gb)",
+      "Type": "Number",
+      "MinValue": "5",
+      "MaxValue": "1024",
+      "ConstraintDescription" : "must be between 5 and 1024Gb."
+    },
+    
+    "DBInstanceClass": {
+      "Description" : "The database instance type",
+      "Type": "String",
+      "Default": "db.t2.micro",
+      "AllowedValues" : [ "db.t1.micro", "db.m1.small", "db.m1.medium", "db.m1.large", "db.m1.xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.m3.medium", "db.m3.large", "db.m3.xlarge", "db.m3.2xlarge", "db.m4.large", "db.m4.xlarge", "db.m4.2xlarge", "db.m4.4xlarge", "db.m4.10xlarge", "db.r3.large", "db.r3.xlarge", "db.r3.2xlarge", "db.r3.4xlarge", "db.r3.8xlarge", "db.m2.xlarge", "db.m2.2xlarge", "db.m2.4xlarge", "db.cr1.8xlarge", "db.t2.micro", "db.t2.small", "db.t2.medium", "db.t2.large"],
+      "ConstraintDescription" : "must select a valid database instance type."
+    },
+    
+    "EC2SecurityGroup": {
+      "Description" : "The EC2 security group that contains instances that need access to the database",
+      "Default": "default",
+      "Type": "String",
+      "AllowedPattern" : "[a-zA-Z0-9\\-]+",
+      "ConstraintDescription" : "must be a valid security group name."
+    },
+    
+    "MultiAZ" : {
+      "Description" : "Multi-AZ master database",
+      "Type" : "String",
+      "Default" : "true",
+      "AllowedValues" : [ "true", "false" ],
+      "ConstraintDescription" : "must be true or false."
+    },
+
+    "VPCIdParameter": {
+      "Description": "VPC id for the Target Group",
+      "Type": "AWS::EC2::VPC::Id",
+      "Default": "vpc-########"
+    },
+
+    "SubnetListParameter": {
+      "Description": "List of Subnets for the Load Balancer. These should be for the a and b availability zones",
+      "Type": "List<AWS::EC2::Subnet::Id>",
+      "Default": "subnet-#######,subnet-########"
+    }
+  },
+  
+  "Conditions" : {
+    "Is-EC2-VPC"     : { "Fn::Or" : [ {"Fn::Equals" : [{"Ref" : "AWS::Region"}, "us-west-1" ]},
+                                      {"Fn::Equals" : [{"Ref" : "AWS::Region"}, "us-west-2" ]}]},
+    "Is-EC2-Classic" : { "Fn::Not" : [{ "Condition" : "Is-EC2-VPC"}]}
+  },
+
+  "Resources": {
+    "CMPE282EC2Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": { "Ref": "InstanceTypeParameter" },
+        "SecurityGroupIds": [ { "Ref": "CMPE282SecurityGroup" } ],
+        "KeyName": { "Ref": "KeyNameParameter" },
+        "ImageId": { "Ref": "ImageIdParameter"}
+      }
+    },
+
+    "CMPE282SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Enable all access",
+        "SecurityGroupIngress": [ {
+          "IpProtocol": "tcp",
+          "FromPort": "80",
+          "ToPort": "80",
+          "CidrIp": "0.0.0.0/0"
+        },{
+          "IpProtocol": "tcp",
+          "FromPort": "8282",
+          "ToPort": "8282",
+          "CidrIp": "0.0.0.0/0"
+        }, {
+          "IpProtocol": "tcp",
+          "FromPort": "22",
+          "ToPort": "22",
+          "CidrIp": "0.0.0.0/0"
+        },{
+          "IpProtocol": "tcp",
+          "FromPort": "3000",
+          "ToPort": "3000",
+          "CidrIp": "0.0.0.0/0"
+        }],
+        "VpcId": { "Ref": "VPCIdParameter" }
+      }
+    },
+    
+    "DBEC2SecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription": "Open database for access",
+        "SecurityGroupIngress" : [{
+          "IpProtocol" : "tcp",
+          "FromPort" : "3306",
+          "ToPort" : "3306",
+          "SourceSecurityGroupName" : { "Ref" : "EC2SecurityGroup" }
+        }]
+      }
+    },
+
+    "DBSecurityGroup": {
+      "Type": "AWS::RDS::DBSecurityGroup",
+      "Properties": {
+        "DBSecurityGroupIngress": {
+          "EC2SecurityGroupName": { "Ref": "EC2SecurityGroup" }
+        },
+        "GroupDescription": "database access"
+      }
+    },
+
+    "MasterDB" : {
+      "Type" : "AWS::RDS::DBInstance",
+      "Properties" : {
+        "DBName" : { "Ref" : "DBName" },
+        "AllocatedStorage" : { "Ref" : "DBAllocatedStorage" },
+        "DBInstanceClass" : { "Ref" : "DBInstanceClass" },
+        "Engine" : "MySQL",
+        "MasterUsername" : { "Ref" : "DBUser" },
+        "MasterUserPassword" : { "Ref" : "DBPassword" },
+        "MultiAZ" : { "Ref" : "MultiAZ" },
+        "Tags" : [{ "Key"  : "Name", "Value" : "Master Database" }],
+        "VPCSecurityGroups": { "Fn::If" : [ "Is-EC2-VPC", [ { "Fn::GetAtt": [ "DBEC2SecurityGroup", "GroupId" ] } ], { "Ref" : "AWS::NoValue"}]},
+        "DBSecurityGroups": { "Fn::If" : [ "Is-EC2-Classic", [ { "Ref": "DBSecurityGroup" } ], { "Ref" : "AWS::NoValue"}]}
+      },
+      "DeletionPolicy" : "Snapshot"
+    },
+
+    "CMPE282AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AvailabilityZones": [
+          { "Fn::Select": [ "0", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] },
+          { "Fn::Select": [ "1", { "Fn::GetAZs" : { "Ref" : "AWS::Region" } } ] }
+        ],
+        "LaunchConfigurationName": { "Ref": "CMPE282LaunchConfiguration" },
+        "MaxSize": "1",
+        "MinSize": "1",
+        "TargetGroupARNs": [ { "Ref": "CMPE282TargetGroup" } ]
+      }
+    },
+
+    "CMPE282AutoScalingGroupPolicy": {
+      "Type": "AWS::AutoScaling::ScalingPolicy",
+      "Properties": {
+        "AdjustmentType": "ChangeInCapacity",
+        "AutoScalingGroupName": { "Ref": "CMPE282AutoScalingGroup"},
+        "PolicyType": "TargetTrackingScaling",
+        "TargetTrackingConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ASGAverageCPUUtilization"
+          },
+          "TargetValue": 50
+        }
+      }
+    },
+
+    "CMPE282LaunchConfiguration": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "IamInstanceProfile": { "Ref": "CMPE282IAMInstanceProfile"},
+        "ImageId": { "Ref": "ImageIdParameter"},
+        "InstanceType": { "Ref": "InstanceTypeParameter"},
+        "KeyName": { "Ref": "KeyNameParameter" },
+        "SecurityGroups": [ { "Ref": "CMPE282SecurityGroup" } ]
+      }
+    },
+
+    "CMPE282TargetGroup": {
+      "Type" : "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties" : {
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckProtocol": "TCP",
+        "HealthCheckTimeoutSeconds": 10,
+        "HealthyThresholdCount": 3,
+        "Port" : 8282,
+        "Protocol" : "TCP",
+        "Targets": [{ "Id": { "Ref": "CMPE282EC2Instance" }, "Port": 8282 }],
+        "VpcId" : { "Ref": "VPCIdParameter" }
+      }
+    },
+
+    "CMPE282EC2InstanceRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [ "arn:aws:iam::aws:policy/AdministratorAccess" ]
+      }
+    },
+
+    "CMPE282IAMInstanceProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [ { "Ref": "CMPE282EC2InstanceRole" } ]
+      }
+    },
+
+    "CMPE282LoadBalancer": {
+      "Type" : "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties" : {
+        "Subnets" : { "Ref": "SubnetListParameter" },
+        "Type" : "network"
+      }
+    },
+    
+    "CMPE282Listener": {
+      "Type" : "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties" : {
+        "DefaultActions" : [
+          {
+            "TargetGroupArn": { "Ref": "CMPE282TargetGroup" },
+            "Type": "forward"
+          }
+        ],
+        "LoadBalancerArn" : { "Ref": "CMPE282LoadBalancer" },
+        "Port" : 8282,
+        "Protocol" : "TCP" 
+      }
+    }
+  },
+
+  "Outputs": {
+    "EC2Platform" : {
+      "Description" : "Platform in which this stack is deployed",
+      "Value" : { "Fn::If" : [ "Is-EC2-VPC", "EC2-VPC", "EC2-Classic" ]}
+    },
+
+    "MasterJDBCConnectionString": {
+      "Description" : "JDBC connection string for the master database",
+      "Value" : { "Fn::Join": [ "", [ "jdbc:mysql://",
+                                      { "Fn::GetAtt": [ "MasterDB", "Endpoint.Address" ] },
+                                      ":",
+                                      { "Fn::GetAtt": [ "MasterDB", "Endpoint.Port" ] },
+                                      "/",
+                                      { "Ref": "DBName" }]]}
+    },
+    "LoadBalancerUrl": {
+      "Description": "InstanceId of the newly created EC2 instance",
+      "Value": { "Fn::Sub": ["http://${url}", { "url": { "Fn::GetAtt": [ "CMPE282LoadBalancer", "DNSName" ] } }] }
+    }
+  }
+}

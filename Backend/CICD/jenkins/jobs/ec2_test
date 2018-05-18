@@ -1,0 +1,38 @@
+
+# Basic deployer script, AWS setup are from CMPE272
+
+deployer="./deployer.py"
+
+sudo yum install python-pip  -y
+sudo pip install boto3
+sudo pip install paramiko
+ 
+$deployer --help
+function cleanup() {
+   echo "Cleaning up..."
+   $deployer --destroy --tag LGHRP_AMI
+}
+trap cleanup EXIT
+
+FirstEC2=/tmp/awseast2.pem
+ls -lrt $FirstEC2
+
+set +x #keep this here
+export AWS_ACCESS_ID=$AWS_ACCESS_KEY_ID
+export AWS_SECRET_KEY=$AWS_SECRET_ACCESS_KEY
+set -x #keep this here
+
+#ssh -tt -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null -i $FirstEC2 maintuser@ec2-18-218-184-113.us-east-2.compute.amazonaws.com
+
+$deployer --deploy --tag LGHRP_AMI
+sleep 50
+
+hostname=`$deployer --host --tag LGHRP_AMI`
+echo $hostname
+
+ssh -tt -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null  -i $FirstEC2 maintuser@$hostname java -version
+ssh -tt -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null  -i $FirstEC2 maintuser@$hostname "cd sjsu && sudo git reset --hard HEAD~1 && sudo git pull origin master"
+#ssh -tt -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null  -i $FirstEC2 maintuser@$hostname sed -i \"s/import javafx.geometry.*//\" sjsu/lghrp/lghrp-service/src/java/service/processor/CreateProcessor.java
+ssh -tt -oStrictHostKeyChecking=no -oUserKnownHostsFile=/dev/null  -i $FirstEC2 maintuser@$hostname "cd sjsu/lghrp && sudo mvn clean install"
+
+

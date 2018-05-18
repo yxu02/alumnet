@@ -1,0 +1,51 @@
+------------------------------------------------
+-- AWS Cognito Plugin - v1
+------------------------------------------------
+
+local pluginName = "library"
+
+
+-- define a function to require the plugin so it does not crash on the Simulator
+local function requirePlugin()
+	if system.getInfo("environment") == "simulator" then
+		print("plugin " .. pluginName .. " is not available on Simulator")
+
+		local fakePlugin = {}
+
+		fakePlugin.logout = function() return end
+		fakePlugin.login = function(username, password, callBack) if callBack then callBack({userSessionUsername="renato@email.com", name="Renato"}) end return end
+		fakePlugin.getUserDetails = function(callBack) if callBack then callBack({email="renato@email.com", name="Renato"}) end return end
+		fakePlugin.signup = function() return end
+
+
+		fakePlugin.setDebugModeOn = function() end
+
+		return fakePlugin
+
+	else
+		return require("plugin." .. pluginName)
+	end
+end
+
+print("going to require " .. pluginName .. " plugin")
+
+local plugin = requirePlugin()
+
+
+--[[
+login success callback event:
+{
+  "userSessionIdTokenExpiration": "Fri May 11 00:58:33 PDT 2018",
+  "userSessionAccessTokenJWTToken": "eyJraWQiOiJNdXpTcDhQdXN6amFzWWhIVTA2SDUyRHhNeDdFN29kbFFkQXR0WXRUblwvVT0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiMDZjMGIwZC1iMGFjLTQzNDEtYThmNC00OGY0Y2YxY2U5N2QiLCJldmVudF9pZCI6ImI4MzZiOTg5LTU0ZTgtMTFlOC05MjM1LTczMWU5YmQ5YjMxOCIsInRva2VuX3VzZSI6ImFjY2VzcyIsInNjb3BlIjoiYXdzLmNvZ25pdG8uc2lnbmluLnVzZXIuYWRtaW4iLCJhdXRoX3RpbWUiOjE1MjYwMjE5MTMsImlzcyI6Imh0dHBzOlwvXC9jb2duaXRvLWlkcC51cy13ZXN0LTIuYW1hem9uYXdzLmNvbVwvdXMtd2VzdC0yX3NZSWVSaVRobSIsImV4cCI6MTUyNjAyNTUxMywiaWF0IjoxNTI2MDIxOTEzLCJqdGkiOiI4ZmIyN2IwMi00OWI2LTRjMzQtOTE2NC04Nzk4NzFmZTMzNGMiLCJjbGllbnRfaWQiOiIzaWMyaHNubDVocTI0aW9qcnVhZGNzaWcwayIsInVzZXJuYW1lIjoiZ2VuZXh1In0.L6MC8riiYTgp2WUeR0UU5NQ8aYP1DdUKOYalqrdSEAxysI0rtX9ScVT-xNXMoYk_LPGRrBOL5mVTKTR0DbH4j8KLqiC2F8lIcHG63evncXLA2DNeub0gBbH8zU1H0brV_Kozbx7mGUpvK1oAYgJHyp69kEDF7QA9K120W_6QggdIo4XDbR4qhOxBnNe6jo03c2ERd1R5Sd0yUN9aqhd5In9AH-O6DmUtDxhVX3Qw2N2_t8fnQHqMcIRKe_-Esb5hxIsg7xo1UpdL63aL444kuDG_t3VeG_9skK4OzNab-Ct9hc90jkEy-Xoun48Qu55nnNJUYE0CIT3q0l5QhWj0Vg",
+  "userSessionUsername": "genexu",
+  "userSessionRefreshToken": "eyJjdHkiOiJKV1QiLCJlbmMiOiJBMjU2R0NNIiwiYWxnIjoiUlNBLU9BRVAifQ.MrnkA791lg8M-sDoUsJg-OAEcx8kT7iII71s7KEYDxNVWK3LkIlQr4ettvROq4FBCHUbDZ1gxNRBLGzeSuZl5h4BjORtKEqoMB7Z_vnyUsVaS6J4Tk5RDgzo_oWOWGEcvURsgJgQSglUlJz51gSS6YE4feNiHSPP19-jWnVr3lOeu2ak5bnLal_S1kWF9Fgl5IkszKBheXd0ypq94le0l2NGVAD9vdQmXlVzYDFAXzIQ9_3r_D2pm7N52ZGmSbwJ1zIOsJiAQ7-MIHzkv1S8ebgr8yN00Fn8KoMnuhs_TSjIQrbTOFCYJCsJKsKDJZAQC27yYZ7rsI-9K6z6PYRPAg.fzUSDIDFvnXRo1iM.I_IQg__Adwdd_RVlq5T6nP65cXioKtjjtaCsXHd_Y-s6H-RYsFjMzMAGyVBZWYAt1LyRmGkj7EDqhIKhpXtVnSLb4jrqUB2LsbpiqVqHxL8mrmkBLRf5mNa_-awOUqR_wNEdFa1i-FnxpcvOQ_lo6b_DKD1nZ6O-T6RbgL9IRMJMko7dA7wcO6SUCI4zW0TZkuwBHDnYcyfd9PGYCdsDXT76CkUNkyg3XVxsqXJBP8cwuil48GwoTh3Ahp6RrMeMjU134as-fnatD4G8jO6OztiCGDFr_NIq5EPfha8nwe7rI0gWi7OZmsKR1cTKwnYFP5vsqoHCdJj0K9xUWgl7qFYmnuUvYObYCVr-Be4RrTz1d3m5gUB_SkenUYHfXs7XCyWylHXq3milZRkrEjsY5erSS3eLhdtNw3b4AcxSm7ly6zC_UVwOxoM2Vfa4ARFgkfQZy3H_KkSXzAAinQxCGdcs0APLxlXFPf0r4YalgwenYh2RMHaGtrGY4JjWs66Omy2x80iCUsqP4Tq59VqablfQAtZhvAt8s7TnkATq2l6MBFv3wxFE87eHIKRD6nE15C7xB6DR_GmvYy6Cf7m3BGcbtuk5zlhovSriLl46waI4NEm_vatnHJ_bKCopYQGWGHOrJoav5d6Owgxlx959j3qqX3uxhfklEgdtJ-ndbJ2DiIQgjHYjGd-tTj0_fanfGxFrK_JF9OEqcaG1cGYIQ29l2ZSyFo4YRNGIimT-A-wgjC43aWcIAqoK9YsPiAa5S1E-8hXjFnPc-9arAkkBXKcFHgd4nexcU6Ziu9JoMSePbWe9Mt7Moh8CnoW3UevCHbE4SaduANiTsAzjvn1qENdnMGdlowyhC7PSarf5MkU04a0zBInv2LM5pPBm92qfHvvpYgd9aK_USKLmJ747zTR-KoqNcLtSYzBj4m4PrKv4r2VzQGoK3LcuWOlMyM109CmQjTpxN1Ig3SO7_5_XjKbamBUb9weOq9NCfUkc6REHirKF0ZheGk_yagst05q7LX10-92bwBMolKfw0viyQTkhXWB7gsAOHYTnKu_Q47qXO4tcG8pIXsUiD8HKVCpmbO8GedgWus0mUUqqUerfDD613RykCA0kvuuGT524c7_NaESfV2E5scQg_8IFYnBlDsQQh3nD2uT0cy6XOd7dlMVzmbAxSEDlv5ELYztZDHBY6OyyjYuHtcKviCuXxEM6wqyy9aJ_1ra0WW3Oz5QFtM6ngjH6XBNRRkZfiQMLWFweW2PkR4rczQ6gh21gdT5aENwa.0ZNVTRZbgHnYO7ssLu6vlQ",
+  "userSessionIdTokenJWTToken": "eyJraWQiOiJRZ2hJSFVUOTZXYWM5VytPZGcwZ05hYWpuSkg0VjVMM0V4YStSN2M4Z2JJPSIsImFsZyI6IlJTMjU2In0.eyJzdWIiOiJiMDZjMGIwZC1iMGFjLTQzNDEtYThmNC00OGY0Y2YxY2U5N2QiLCJhdWQiOiIzaWMyaHNubDVocTI0aW9qcnVhZGNzaWcwayIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJldmVudF9pZCI6ImI4MzZiOTg5LTU0ZTgtMTFlOC05MjM1LTczMWU5YmQ5YjMxOCIsInRva2VuX3VzZSI6ImlkIiwiYXV0aF90aW1lIjoxNTI2MDIxOTEzLCJpc3MiOiJodHRwczpcL1wvY29nbml0by1pZHAudXMtd2VzdC0yLmFtYXpvbmF3cy5jb21cL3VzLXdlc3QtMl9zWUllUmlUaG0iLCJuYW1lIjoiR2VuZSBYdSIsImNvZ25pdG86dXNlcm5hbWUiOiJnZW5leHUiLCJleHAiOjE1MjYwMjU1MTMsImlhdCI6MTUyNjAyMTkxMywiZW1haWwiOiJ5engxMDVwc3VAZ21haWwuY29tIn0.Pgyvdjyxn7P4h7c7xoUg_RewG6Z5DP-FPK2A4HijcHaLC_MRbr2uNLLIAmIGwG75KTXGgqtOVcomfAudL--6mcZZEAQ8VVhKemt1rE4_EgjFNRYmf8ZNfETOcaF0kMdp6mSL1xXRVeyafRa3xmViPx7QJMf6zK4HJBrMYq9lcT4FXrKLZlnWRk5MEP9HcGQB0itZ8MBnxAOb4hMNc6JyeLL3soc9-CvVFhKQB_6CEgCyiBtfLC8_c5FQim_5V495eh5tnLdT58Qcu_FEjxrKZfjsgwFVjI6v4h4h5KwfTHX7-0d-bAVmL2EbAnypoBVtI4P69fLCwp11odHSOAZglw",
+  "userSessionAccessTokenExpiration": "Fri May 11 00:58:33 PDT 2018",
+  "userSessionIdTokenIssuedAt": "Thu May 10 23:58:33 PDT 2018"
+}
+
+login failed callback event:
+
+]]
+
+return plugin

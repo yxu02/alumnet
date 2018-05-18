@@ -1,0 +1,30 @@
+git log
+
+# Call a python script that verifies the end points
+
+#mv dbs.sql /tmp
+echo "Bringing to clean state ..."
+sudo service postgresql stop || true
+sudo yum remove postgresql-server -y || true
+sudo rm -rf /var/lib/pgsql/data
+
+echo "Setting up postgres...."
+
+whoami
+
+
+sudo yum install postgresql-server -y
+sudo postgresql-setup initdb
+
+sudo service postgresql start
+
+echo "importing database schema..."
+sudo su - postgres -c "createdb CMPE282Database"
+cd /tmp
+sudo -u postgres psql -d CMPE282Database -f dbs.sql -L logfile.log
+cat logfile.log
+
+echo "Stopping postgres server..."
+sudo service postgresql stop
+sudo yum remove postgresql-server -y
+
